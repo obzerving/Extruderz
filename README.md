@@ -9,7 +9,7 @@ Copy extruderz.inx and extruderz.py into your Inkscape user extensions directory
 
 Usage:
 
-See the file https://github.com/obzerving/Extruderz/How_to_use_extruder.pdf for details.
+See the file [How_to_use_extruder.pdf](https://github.com/obzerving/Extruderz/blob/main/How_to_use_extruder.pdf) for details.
 
 Note:
 
