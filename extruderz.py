@@ -631,7 +631,8 @@ class Extruder(inkex.EffectExtension):
                             mpath.append(tabpt2)
                             mpath.append(strip.path[ptn+1])
                             score.append(self.makescore(strip.path[ptn], strip.path[ptn+1],dashlength))
-                            scores.append(score)
+                        scores[stripcnt].append(copy.deepcopy(score))
+                        score.clear()
                         for nodes in range(len(mpath)):
                             if nodes == 0:
                                 dprop = 'M '
