@@ -37,6 +37,7 @@ class pathStruct(object):
         return self.path
     
 class pnPoint(object):
+   # This class came from https://github.com/JoJocoder/PNPOLY
     def __init__(self,p):
         self.p=p
     def __str__(self):
@@ -129,15 +130,14 @@ class Extruder(inkex.EffectExtension):
         # Draws a dashed line of dashlength between two points
         # Dash = dashlength (in inches) space followed by dashlength mark
         # if dashlength is zero, we want a solid line
-        roundoff = 0.0001
         apt1 = inkex.paths.Line(0.0,0.0)
         apt2 = inkex.paths.Line(0.0,0.0)
         ddash = ''
-        if dashlength == 0:
+        if math.isclose(dashlength, 0.0):
             #inkex.utils.debug("Draw solid dashline")
             ddash = ' M '+str(pt1.x)+','+str(pt1.y)+' L '+str(pt2.x)+','+str(pt2.y)
         else:
-            if abs(pt1.y - pt2.y) <= roundoff:
+            if math.isclose(pt1.y, pt2.y):
                 #inkex.utils.debug("Draw horizontal dashline")
                 if pt1.x < pt2.x:
                     xcushion = pt2.x - dashlength
@@ -157,7 +157,7 @@ class Extruder(inkex.EffectExtension):
                         ddash = ddash + ' L ' + str(xpt) + ',' + str(ypt)
                     else:
                         done = True
-            elif abs(pt1.x - pt2.x) <= roundoff:
+            elif math.isclose(pt1.x, pt2.x):
                 #inkex.utils.debug("Draw vertical dashline")
                 if pt1.y < pt2.y:
                     ycushion = pt2.y - dashlength
@@ -201,7 +201,6 @@ class Extruder(inkex.EffectExtension):
                 while not(done):
                     nypt = ypt - dashlength*2*math.sin(theta)
                     nxpt = xpt - msign*dashlength*2*math.cos(theta)
-                    #inkex.utils.debug("nxpt={0}, nypt={1}, cntr={2}".format(nxpt,nypt,cntr))
                     if (nypt >= ycushion) and (((m<0) and (nxpt <= xcushion)) or ((m>0) and (nxpt >= xcushion))):
                         # move to end of space / beginning of mark
                         xpt = xpt - msign*dashlength*math.cos(theta)
@@ -232,11 +231,6 @@ class Extruder(inkex.EffectExtension):
         # tabht - the height of the tab
         # taba - the angle of the tab sides
         # returns the two tab points in order of closest to pt1
-        orientTop = 0
-        orientBottom = 1
-        orientRight = 2
-        orientLeft = 3
-        roundoff = 0.0001
         tpt1 = inkex.paths.Line(0.0,0.0)
         tpt2 = inkex.paths.Line(0.0,0.0)
         currTabHt = tabht
@@ -245,175 +239,54 @@ class Extruder(inkex.EffectExtension):
         tabDone = False
         while not tabDone:
             # Let's find out the orientation of the tab
-            if abs(pt1.x - pt2.x) < roundoff:
+            if math.isclose(pt1.x, pt2.x):
                 # It's vertical. Let's try the right side
                 if pt1.y < pt2.y:
-                    tptx = pt1.x + currTabHt
-                    tpty = pt1.y + (pt2.y-pt1.y)/2
-                    pnpt = inkex.paths.Move(tptx, tpty)
-                    ##inkex.utils.debug("Checking for point {0} inside path".format(pnpt))
-                    if self.insidePath(tpath.path, pnpt):
-                        ##inkex.utils.debug("Point inside path")
-                        if tpath.enclosed:
-                            ##inkex.utils.debug("Case A")
-                            orient = orientRight # We guessed right
-                            ##inkex.utils.debug("Path enclosed; orientRight")
-                            tpt1.x = pt1.x + currTabHt
-                            tpt2.x = pt2.x + currTabHt
-                            tpt1.y = pt1.y + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.y = pt2.y - currTabHt/math.tan(math.radians(currTabAngle))
-                        else:
-                            ##inkex.utils.debug("Case B")
-                            orient = orientLeft # Guessed wrong
-                            ##inkex.utils.debug("Path not enclosed; orientLeft")
+                    tpt1.x = pt1.x + currTabHt
+                    tpt2.x = pt2.x + currTabHt
+                    tpt1.y = pt1.y + currTabHt/math.tan(math.radians(currTabAngle))
+                    tpt2.y = pt2.y - currTabHt/math.tan(math.radians(currTabAngle))
+                    pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
+                    if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
                             tpt1.x = pt1.x - currTabHt
                             tpt2.x = pt2.x - currTabHt
-                            tpt1.y = pt1.y + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.y = pt2.y - currTabHt/math.tan(math.radians(currTabAngle))
-                    else:
-                        ##inkex.utils.debug("Point outside path")
-                        if tpath.enclosed:
-                            ##inkex.utils.debug("Case C")
-                            orient = orientLeft # Guessed wrong
-                            ##inkex.utils.debug("Path enclosed; orientLeft")
-                            tpt1.x = pt1.x - currTabHt
-                            tpt2.x = pt2.x - currTabHt
-                            tpt1.y = pt1.y + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.y = pt2.y - currTabHt/math.tan(math.radians(currTabAngle))
-                        else:
-                            ##inkex.utils.debug("Case D")
-                            orient = orientRight # Guessed right
-                            ##inkex.utils.debug("Path not enclosed; orientRight")
-                            tpt1.x = pt1.x + currTabHt
-                            tpt2.x = pt2.x + currTabHt
                             tpt1.y = pt1.y + currTabHt/math.tan(math.radians(currTabAngle))
                             tpt2.y = pt2.y - currTabHt/math.tan(math.radians(currTabAngle))
                 else: # pt2.y < pt1.y
-                    tptx = pt1.x + currTabHt
-                    tpty = pt1.y - (pt1.y-pt2.y)/2
-                    pnpt = inkex.paths.Move(tptx, tpty)
-                    if self.insidePath(tpath.path, pnpt):
-                        ##inkex.utils.debug("Point inside path")
-                        if tpath.enclosed:
-                            ##inkex.utils.debug("Case E")
-                            ##inkex.utils.debug("Path enclosed; orientRight")
-                            orient = orientRight # We guessed right
-                            tpt1.x = pt1.x + currTabHt
-                            tpt2.x = pt2.x + currTabHt
-                            tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
-                        else:
-                            ##inkex.utils.debug("Case F")
-                            orient = orientLeft # Guessed wrong
-                            ##inkex.utils.debug("Path not enclosed; orientLeft")
-                            tpt1.x = pt1.x - currTabHt
-                            tpt2.x = pt2.x - currTabHt
-                            tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
-                    else:
-                        ##inkex.utils.debug("Point outside path")
-                        if tpath.enclosed:
-                            ##inkex.utils.debug("Case G")
-                            orient = orientRight # Guessed wrong
-                            ##inkex.utils.debug("Path enclosed; orientLeft")
-                            tpt1.x = pt1.x - currTabHt
-                            tpt2.x = pt2.x - currTabHt
-                            tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
-                        else:
-                            ##inkex.utils.debug("Case H")
-                            orient = orientRight # Guessed right
-                            ##inkex.utils.debug("Path not enclosed; orientRight")
-                            tpt1.x = pt1.x + currTabHt
-                            tpt2.x = pt2.x + currTabHt
-                            tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
-            elif abs(pt1.y - pt2.y) < roundoff:
+                    tpt1.x = pt1.x + currTabHt
+                    tpt2.x = pt2.x + currTabHt
+                    tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
+                    tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
+                    pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
+                    if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
+                        tpt1.x = pt1.x - currTabHt
+                        tpt2.x = pt2.x - currTabHt
+                        tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
+                        tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
+            elif math.isclose(pt1.y, pt2.y):
                 # It's horizontal. Let's try the top
                 if pt1.x < pt2.x:
-                    tptx = pt1.x + (pt2.x - pt1.x)/2
-                    tpty = pt1.y - currTabHt
-                    pnpt = inkex.paths.Move(tptx, tpty)
-                    if self.insidePath(tpath.path, pnpt):
-                        ##inkex.utils.debug("Point inside path")
-                        # Did we want it inside the path?
-                        if tpath.enclosed:
-                            ##inkex.utils.debug("Case I")
-                            orient = orientTop # We guessed right
-                            ##inkex.utils.debug("Path enclosed; orientTop")
-                            tpt1.y = pt1.y - currTabHt
-                            tpt2.y = pt2.y - currTabHt
-                            tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
-                        else:
-                            ##inkex.utils.debug("Case J")
-                            orient = orientBottom # Guessed wrong
-                            ##inkex.utils.debug("Path not enclosed; orientBottom")
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
-                            tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
-                    else:
-                        ##inkex.utils.debug("Point outside path")
-                        # Nope. We want it outside
-                        if tpath.enclosed:
-                            ##inkex.utils.debug("Case K")
-                            orient = orientBottom # Guessed wrong
-                            #inkex.utils.debug("Path not enclosed; orientBottom")
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
-                            tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
-                        else:
-                            #inkex.utils.debug("Case L")
-                            orient = orientTop # We guessed right
-                            #inkex.utils.debug("Path not enclosed; orientTop")
-                            tpt1.y = pt1.y - currTabHt
-                            tpt2.y = pt2.y - currTabHt
-                            tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
+                    tpt1.y = pt1.y - currTabHt
+                    tpt2.y = pt2.y - currTabHt
+                    tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
+                    tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
+                    pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
+                    if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
+                        tpt1.y = pt1.y + currTabHt
+                        tpt2.y = pt2.y + currTabHt
+                        tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
+                        tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
                 else: # pt2.x < pt1.x
-                    tptx = pt1.x -(pt1.x - pt2.x)/2
-                    tpty = pt1.y - currTabHt
-                    pnpt = inkex.paths.Move(tptx, tpty)
-                    if self.insidePath(tpath.path, pnpt):
-                        #inkex.utils.debug("Point inside path")
-                        # Did we want it inside the path?
-                        if tpath.enclosed:
-                            #inkex.utils.debug("Case M")
-                            orient = orientTop # We guessed right
-                            #inkex.utils.debug("Path enclosed; orientTop")
-                            tpt1.y = pt1.y - currTabHt
-                            tpt2.y = pt2.y - currTabHt
-                            tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
-                        else:
-                            #inkex.utils.debug("Case N")
-                            orient = orientBottom # Guessed wrong
-                            #inkex.utils.debug("Path not enclosed; orientBottom")
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
-                            tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
-                    else:
-                        #inkex.utils.debug("Point outside path")
-                        # Nope. We want it outside
-                        if tpath.enclosed:
-                            #inkex.utils.debug("Case O")
-                            orient = orientBottom # Guessed wrong
-                            #inkex.utils.debug("Path enclosed; orientBottom")
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
-                            tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
-                        else:
-                            #inkex.utils.debug("Case P")
-                            orient = orientTop # Guessed right
-                            #inkex.utils.debug("Path not enclosed; orientTop")
-                            tpt1.y = pt1.y - currTabHt
-                            tpt2.y = pt2.y - currTabHt
-                            tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
+                    tpt1.y = pt1.y - currTabHt
+                    tpt2.y = pt2.y - currTabHt
+                    tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
+                    tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
+                    pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
+                    if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
+                        tpt1.y = pt1.y + currTabHt
+                        tpt2.y = pt2.y + currTabHt
+                        tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
+                        tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
 
             else: # the orientation is neither horizontal nor vertical
                 # Let's get the slope of the line between the points
@@ -426,7 +299,6 @@ class Extruder(inkex.EffectExtension):
                 seglength = math.sqrt((pt1.x-pt2.x)**2 +(pt1.y-pt2.y)**2)
                 if slope < 0.0:
                     if pt1.x < pt2.x:
-                        #inkex.utils.debug("Case Q: outside")
                         tpt1.y = pt1.y - currTabHt
                         tpt2.y = pt2.y - currTabHt
                         tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
@@ -444,8 +316,7 @@ class Extruder(inkex.EffectExtension):
                         tpt2.x = thetal2[1].x
                         tpt2.y = thetal2[1].y
                         pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                        if self.insidePath(tpath.path, pnpt):
-                            #inkex.utils.debug("Tab inside path. Recalculating...")
+                        if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
                             tpt1.y = pt1.y + currTabHt
                             tpt2.y = pt2.y + currTabHt
                             tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
@@ -462,9 +333,7 @@ class Extruder(inkex.EffectExtension):
                             tpt1.y = thetal1[1].y
                             tpt2.x = thetal2[1].x
                             tpt2.y = thetal2[1].y
-                            
                     else:
-                        #inkex.utils.debug("Case R: outside")
                         tpt1.y = pt1.y - currTabHt
                         tpt2.y = pt2.y - currTabHt
                         tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
@@ -482,8 +351,7 @@ class Extruder(inkex.EffectExtension):
                         tpt2.x = thetal2[1].x
                         tpt2.y = thetal2[1].y
                         pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                        if self.insidePath(tpath.path, pnpt):
-                            #inkex.utils.debug("Tab inside path. Recalculating...")
+                        if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
                             tpt1.y = pt1.y + currTabHt
                             tpt2.y = pt2.y + currTabHt
                             tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
@@ -502,7 +370,6 @@ class Extruder(inkex.EffectExtension):
                             tpt2.y = thetal2[1].y
                 else: # slope > 0.0
                     if pt1.x < pt2.x:
-                        #inkex.utils.debug("Case S: outside")
                         tpt1.y = pt1.y - currTabHt
                         tpt2.y = pt2.y - currTabHt
                         tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
@@ -520,8 +387,7 @@ class Extruder(inkex.EffectExtension):
                         tpt2.x = thetal2[1].x
                         tpt2.y = thetal2[1].y
                         pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                        if self.insidePath(tpath.path, pnpt):
-                            #inkex.utils.debug("Tab inside path. Recalculating...")
+                        if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
                             tpt1.y = pt1.y + currTabHt
                             tpt2.y = pt2.y + currTabHt
                             tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
@@ -539,7 +405,6 @@ class Extruder(inkex.EffectExtension):
                             tpt2.x = thetal2[1].x
                             tpt2.y = thetal2[1].y
                     else:
-                        #inkex.utils.debug("Case T: outside")
                         tpt1.y = pt1.y - currTabHt
                         tpt2.y = pt2.y - currTabHt
                         tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
@@ -557,8 +422,7 @@ class Extruder(inkex.EffectExtension):
                         tpt2.x = thetal2[1].x
                         tpt2.y = thetal2[1].y
                         pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                        if self.insidePath(tpath.path, pnpt):
-                            #inkex.utils.debug("Tab inside path. Recalculating...")
+                        if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
                             tpt1.y = pt1.y + currTabHt
                             tpt2.y = pt2.y + currTabHt
                             tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
@@ -599,7 +463,6 @@ class Extruder(inkex.EffectExtension):
         return tpt1,tpt2
 
     def effect(self):
-        roundoff = 0.0001
         layer = self.svg.get_current_layer()
         doc_layer = self.svg.add(inkex.elements._groups.Layer.new('Layer Doc'))
         scale = self.svg.unittouu('1'+self.options.unit)
@@ -624,6 +487,23 @@ class Extruder(inkex.EffectExtension):
                 for tf in transforms:
                     if tf.startswith('scale'):
                         escale = float(tf.split('(')[1].split(')')[0])
+            # Get style of original polygon
+            if 'style' in elem.attrib:
+                sstr = elem.attrib['style']
+                if not math.isclose(escale, 1.0):
+                    lsstr = sstr.split(';')
+                    for stoken in range(len(lsstr)):
+                        if lsstr[stoken].startswith('stroke-width'):
+                            swt = lsstr[stoken].split(':')[1]
+                            swf = str(float(swt)*escale)
+                            lsstr[stoken] = lsstr[stoken].replace(swt, swf)
+                        if lsstr[stoken].startswith('stroke-miterlimit'):
+                            swt = lsstr[stoken].split(':')[1]
+                            swf = str(float(swt)*escale)
+                            lsstr[stoken] = lsstr[stoken].replace(swt, swf)
+                    sstr = ";".join(lsstr)
+            else:
+                sstr = None
             last_letter = 'Z'
             savid = elem.get_id()
             idmod = 0
@@ -670,20 +550,21 @@ class Extruder(inkex.EffectExtension):
             if idmod > 1:
                 for apath in npaths: # We test these paths to see if they are fully enclosed
                     for bpath in npaths: # by these paths
-                        if apath.id != bpath.id:
-                            apath.enclosed = self.pathInsidePath(bpath.path, apath.path)
+                        if self.pathInsidePath(bpath.path, apath.path):
+                            apath.enclosed = True
             for opath in npaths:
-                if opath.enclosed == False: # We only want the outer path
-                    # create the extruded strip
+                if opath.enclosed == False: # For now, we only want the outer path
+                    # create the extruded path
                     xpos = ypos = 0.0
                     segs = pathStruct()
                     segs.enclosed = False
                     segs.id = opath.id+"x"
                     segs.path.append(inkex.paths.Move(xpos,ypos))
                     strips = [] # Needed because a single strip might be larger than the paper
-                    scores = [] # holds the score lines per strip
+                    scores = [] # holds lists of individual score lines per strip
+                    score = [] # holds a list of individual score lines
                     spaths = ''
-                    # create left edge of strip
+                    # create left edge of path
                     for jnode in range(0,len(opath.path)-1):
                         if jnode == 0:
                             # Let's draw the first two node numbers to show the starting point and direction
@@ -697,40 +578,25 @@ class Extruder(inkex.EffectExtension):
                             segs.enclosed = False
                             segs.id = opath.id+"x"
                             ypos = 0
-                            scores.append(spaths)
+                            scores.append(copy.deepcopy(score))
+                            score.clear()
                             spaths = ''
                             segs.path.append(inkex.paths.Move(xpos,ypos))
                         ypos = ypos + seglength
                         segs.path.append(inkex.paths.Move(xpos,ypos))
                         if jnode < len(opath.path)-1:
                             # Generate score lines across extrusion
-                            spaths = spaths + self.makescore(inkex.paths.Move(xpos,ypos), inkex.paths.Move(extrude, ypos),dashlength)
+                            score.append(self.makescore(inkex.paths.Move(xpos,ypos), inkex.paths.Move(extrude, ypos),dashlength))
                     strips.append(copy.deepcopy(segs))
-                    scores.append(spaths)
-                    # create right edge of strip
+                    scores.append(copy.deepcopy(score))
+                    score.clear()
+                    # create right edge of path
                     for knode in range(len(strips)):
                         rsegs = strips[knode].path[::-1]
                         for jnode in range(0,len(rsegs)):
                             strips[knode].path.append(inkex.paths.Move(extrude, rsegs[jnode].y))
                         rsegs.clear()
-                        # Get style of original polygon
-                        if 'style' in elem.attrib:
-                            sstr = elem.attrib['style']
-                            if abs(escale - 1.0) > roundoff:
-                                lsstr = sstr.split(';')
-                                for stoken in range(len(lsstr)):
-                                    if lsstr[stoken].startswith('stroke-width'):
-                                        swt = lsstr[stoken].split(':')[1]
-                                        swf = str(float(swt)*escale)
-                                        lsstr[stoken] = lsstr[stoken].replace(swt, swf)
-                                    if lsstr[stoken].startswith('stroke-miterlimit'):
-                                        swt = lsstr[stoken].split(':')[1]
-                                        swf = str(float(swt)*escale)
-                                        lsstr[stoken] = lsstr[stoken].replace(swt, swf)
-                                sstr = ";".join(lsstr)
-                        else:
-                            sstr = None
-                    # Generate the deco strips
+                    # Generate the deco strips from the extruded paths
                     for stripcnt in range(len(strips)):
                         for nodes in range(len(strips[stripcnt].path)):
                             if nodes == 0:
@@ -740,9 +606,21 @@ class Extruder(inkex.EffectExtension):
                             dprop = dprop + str(strips[stripcnt].path[nodes].x) + ',' + str(strips[stripcnt].path[nodes].y)
                         ## and close the path
                         dprop = dprop + ' Z'
-                        dprop = dprop + scores[stripcnt]
-                        self.drawline(dprop,opath.id+'d'+str(stripcnt),layer,sstr)
-                    # Generate the tabbed strips
+                        spaths = ''
+                        for scorecnt in range(len(scores[stripcnt])-1): # each list of individual scorelines across extrusion per strip
+                            scorex = scores[stripcnt][scorecnt]
+                            for sc in scorex:
+                                spaths += sc
+                        if math.isclose(dashlength, 0.0) and spaths != '':
+                            group = inkex.elements._groups.Group()
+                            group.label = 'g'+opath.id+'ws'+str(stripcnt)
+                            self.drawline(dprop,'wrapper'+str(stripcnt),group,sstr) # Output the model
+                            self.drawline(spaths[1:],'score'+str(stripcnt)+'m',group,sstr) # Output the scorelines separately
+                            layer.append(group)
+                        else:
+                            dprop = dprop + spaths
+                            self.drawline(dprop,opath.id+'d'+str(stripcnt),layer,sstr)
+                    # Generate the tabbed strips from the extruded paths
                     dprop = ''
                     for stripcnt in range(len(strips)):
                         strip = strips[stripcnt]
@@ -752,8 +630,8 @@ class Extruder(inkex.EffectExtension):
                             mpath.append(tabpt1)
                             mpath.append(tabpt2)
                             mpath.append(strip.path[ptn+1])
-                            spaths = self.makescore(strip.path[ptn], strip.path[ptn+1],dashlength)
-                            scores[stripcnt] = scores[stripcnt] + spaths
+                            score.append(self.makescore(strip.path[ptn], strip.path[ptn+1],dashlength))
+                            scores.append(score)
                         for nodes in range(len(mpath)):
                             if nodes == 0:
                                 dprop = 'M '
@@ -762,8 +640,20 @@ class Extruder(inkex.EffectExtension):
                             dprop = dprop + str(mpath[nodes].x) + ',' + str(mpath[nodes].y)
                         ## and close the path
                         dprop = dprop + ' Z'
-                        dprop = dprop + scores[stripcnt]
-                        self.drawline(dprop,opath.id+'s'+str(stripcnt),layer,sstr)
+                        spaths = ''
+                        for scorecnt in range(len(scores[stripcnt])): # each list of individual scorelines across extrusion and tabs per strip
+                            scorex = scores[stripcnt][scorecnt]
+                            for sc in scorex:
+                                spaths += sc
+                        if math.isclose(dashlength, 0.0) and spaths != '':
+                            group = inkex.elements._groups.Group()
+                            group.label = 'g'+opath.id+'ms'+str(stripcnt)
+                            self.drawline(dprop,'model'+str(stripcnt),group,sstr) # Output the model
+                            self.drawline(spaths[1:],'score'+str(stripcnt)+'m',group,sstr) # Output the scorelines separately
+                            layer.append(group)
+                        else:
+                            dprop = dprop + spaths
+                            self.drawline(dprop,opath.id+'s'+str(stripcnt),layer,sstr)
 
 
 if __name__ == '__main__':
