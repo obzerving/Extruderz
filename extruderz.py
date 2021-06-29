@@ -553,7 +553,7 @@ class Extruder(inkex.EffectExtension):
                         if self.pathInsidePath(bpath.path, apath.path):
                             apath.enclosed = True
             for opath in npaths:
-                if opath.enclosed == False: # For now, we only want the outer path
+                if True: # We'll handle outside paths and the cutouts, too
                     # create the extruded path
                     xpos = ypos = 0.0
                     segs = pathStruct()
