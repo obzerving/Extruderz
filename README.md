@@ -13,6 +13,8 @@ Usage:
 
 See the file [How_to_use_extruder.pdf](https://github.com/obzerving/Extruderz/blob/main/How_to_use_extruder.pdf) for details.
 
+[Inkscape 1.1 Papercraft Extruder Extension from Installation to Design Space](https://www.youtube.com/watch?v=lTKPwi4G5_s) is a video tutorial on using the extension.
+
 Note:
 
 This extension (for Inkscape version 1.1.) is still under development and the code reflects it. It's functional, but not yet bulletproof, so be mindful of the input constraints in the usage document.
