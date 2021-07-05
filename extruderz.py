@@ -32,7 +32,7 @@ class pathStruct(object):
     def __init__(self):
         self.id="path0000"
         self.path=[]
-        self.enclosed="False"
+        self.enclosed=False
     def __str__(self):
         return self.path
     
@@ -235,6 +235,8 @@ class Extruder(inkex.EffectExtension):
         tpt2 = inkex.paths.Line(0.0,0.0)
         currTabHt = tabht
         currTabAngle = taba
+        testAngle = 1.0
+        testHt = currTabHt * 0.01
         adjustTab = 0
         tabDone = False
         while not tabDone:
@@ -242,51 +244,71 @@ class Extruder(inkex.EffectExtension):
             if math.isclose(pt1.x, pt2.x):
                 # It's vertical. Let's try the right side
                 if pt1.y < pt2.y:
-                    tpt1.x = pt1.x + currTabHt
-                    tpt2.x = pt2.x + currTabHt
-                    tpt1.y = pt1.y + currTabHt/math.tan(math.radians(currTabAngle))
-                    tpt2.y = pt2.y - currTabHt/math.tan(math.radians(currTabAngle))
-                    pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                    if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
-                            tpt1.x = pt1.x - currTabHt
-                            tpt2.x = pt2.x - currTabHt
-                            tpt1.y = pt1.y + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.y = pt2.y - currTabHt/math.tan(math.radians(currTabAngle))
-                else: # pt2.y < pt1.y
-                    tpt1.x = pt1.x + currTabHt
-                    tpt2.x = pt2.x + currTabHt
-                    tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
-                    tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
-                    pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                    if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
+                    tpt1.x = pt1.x + testHt
+                    tpt2.x = pt2.x + testHt
+                    tpt1.y = pt1.y + testHt/math.tan(math.radians(testAngle))
+                    tpt2.y = pt2.y - testHt/math.tan(math.radians(testAngle))
+                    pnpt1 = inkex.paths.Move(tpt1.x, tpt1.y)
+                    pnpt2 = inkex.paths.Move(tpt2.x, tpt2.y)
+                    if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
+                       (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
                         tpt1.x = pt1.x - currTabHt
                         tpt2.x = pt2.x - currTabHt
-                        tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
-                        tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
+                    else:
+                        tpt1.x = pt1.x + currTabHt
+                        tpt2.x = pt2.x + currTabHt
+                    tpt1.y = pt1.y + currTabHt/math.tan(math.radians(currTabAngle))
+                    tpt2.y = pt2.y - currTabHt/math.tan(math.radians(currTabAngle))
+                else: # pt2.y < pt1.y
+                    tpt1.x = pt1.x + testHt
+                    tpt2.x = pt2.x + testHt
+                    tpt1.y = pt1.y - testHt/math.tan(math.radians(testAngle))
+                    tpt2.y = pt2.y + testHt/math.tan(math.radians(testAngle))
+                    pnpt1 = inkex.paths.Move(tpt1.x, tpt1.y)
+                    pnpt2 = inkex.paths.Move(tpt2.x, tpt2.y)
+                    if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
+                       (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
+                        tpt1.x = pt1.x - currTabHt
+                        tpt2.x = pt2.x - currTabHt
+                    else:
+                        tpt1.x = pt1.x + currTabHt
+                        tpt2.x = pt2.x + currTabHt
+                    tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
+                    tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
             elif math.isclose(pt1.y, pt2.y):
                 # It's horizontal. Let's try the top
                 if pt1.x < pt2.x:
-                    tpt1.y = pt1.y - currTabHt
-                    tpt2.y = pt2.y - currTabHt
+                    tpt1.y = pt1.y - testHt
+                    tpt2.y = pt2.y - testHt
+                    tpt1.x = pt1.x + testHt/math.tan(math.radians(testAngle))
+                    tpt2.x = pt2.x - testHt/math.tan(math.radians(testAngle))
+                    pnpt1 = inkex.paths.Move(tpt1.x, tpt1.y)
+                    pnpt2 = inkex.paths.Move(tpt2.x, tpt2.y)
+                    if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
+                       (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
+                        tpt1.y = pt1.y + currTabHt
+                        tpt2.y = pt2.y + currTabHt
+                    else:
+                        tpt1.y = pt1.y - currTabHt
+                        tpt2.y = pt2.y - currTabHt
                     tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
                     tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
-                    pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                    if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
+                else: # pt2.x < pt1.x
+                    tpt1.y = pt1.y - testHt
+                    tpt2.y = pt2.y - testHt
+                    tpt1.x = pt1.x - testHt/math.tan(math.radians(testAngle))
+                    tpt2.x = pt2.x + testHt/math.tan(math.radians(testAngle))
+                    pnpt1 = inkex.paths.Move(tpt1.x, tpt1.y)
+                    pnpt2 = inkex.paths.Move(tpt2.x, tpt2.y)
+                    if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
+                       (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
                         tpt1.y = pt1.y + currTabHt
                         tpt2.y = pt2.y + currTabHt
-                        tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                        tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
-                else: # pt2.x < pt1.x
-                    tpt1.y = pt1.y - currTabHt
-                    tpt2.y = pt2.y - currTabHt
+                    else:
+                        tpt1.y = pt1.y - currTabHt
+                        tpt2.y = pt2.y - currTabHt
                     tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
                     tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
-                    pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                    if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
-                        tpt1.y = pt1.y + currTabHt
-                        tpt2.y = pt2.y + currTabHt
-                        tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                        tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
 
             else: # the orientation is neither horizontal nor vertical
                 # Let's get the slope of the line between the points
@@ -299,8 +321,31 @@ class Extruder(inkex.EffectExtension):
                 seglength = math.sqrt((pt1.x-pt2.x)**2 +(pt1.y-pt2.y)**2)
                 if slope < 0.0:
                     if pt1.x < pt2.x:
-                        tpt1.y = pt1.y - currTabHt
-                        tpt2.y = pt2.y - currTabHt
+                        tpt1.y = pt1.y - testHt
+                        tpt2.y = pt2.y - testHt
+                        tpt1.x = pt1.x + testHt/math.tan(math.radians(testAngle))
+                        tpt2.x = pt2.x - testHt/math.tan(math.radians(testAngle))
+                        tl1 = [('M', [pt1.x,pt1.y])]
+                        tl1 += [('L', [tpt1.x, tpt1.y])]
+                        ele1 = inkex.Path(tl1)
+                        tl2 = [('M', [pt1.x,pt1.y])]
+                        tl2 += [('L', [tpt2.x, tpt2.y])]
+                        ele2 = inkex.Path(tl2)
+                        thetal1 = ele1.rotate(theta, [pt1.x,pt1.y])
+                        thetal2 = ele2.rotate(theta, [pt2.x,pt2.y])
+                        tpt1.x = thetal1[1].x
+                        tpt1.y = thetal1[1].y
+                        tpt2.x = thetal2[1].x
+                        tpt2.y = thetal2[1].y
+                        pnpt1 = inkex.paths.Move(tpt1.x, tpt1.y)
+                        pnpt2 = inkex.paths.Move(tpt2.x, tpt2.y)
+                        if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
+                           (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
+                            tpt1.y = pt1.y + currTabHt
+                            tpt2.y = pt2.y + currTabHt
+                        else:
+                            tpt1.y = pt1.y - currTabHt
+                            tpt2.y = pt2.y - currTabHt
                         tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
                         tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
                         tl1 = [('M', [pt1.x,pt1.y])]
@@ -315,27 +360,32 @@ class Extruder(inkex.EffectExtension):
                         tpt1.y = thetal1[1].y
                         tpt2.x = thetal2[1].x
                         tpt2.y = thetal2[1].y
-                        pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                        if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
+                    else: # pt1.x > pt2.x
+                        tpt1.y = pt1.y - testHt
+                        tpt2.y = pt2.y - testHt
+                        tpt1.x = pt1.x - testHt/math.tan(math.radians(testAngle))
+                        tpt2.x = pt2.x + testHt/math.tan(math.radians(testAngle))
+                        tl1 = [('M', [pt1.x,pt1.y])]
+                        tl1 += [('L', [tpt1.x, tpt1.y])]
+                        ele1 = inkex.Path(tl1)
+                        tl2 = [('M', [pt1.x,pt1.y])]
+                        tl2 += [('L', [tpt2.x, tpt2.y])]
+                        ele2 = inkex.Path(tl2)
+                        thetal1 = ele1.rotate(theta, [pt1.x,pt1.y])
+                        thetal2 = ele2.rotate(theta, [pt2.x,pt2.y])
+                        tpt1.x = thetal1[1].x
+                        tpt1.y = thetal1[1].y
+                        tpt2.x = thetal2[1].x
+                        tpt2.y = thetal2[1].y
+                        pnpt1 = inkex.paths.Move(tpt1.x, tpt1.y)
+                        pnpt2 = inkex.paths.Move(tpt2.x, tpt2.y)
+                        if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
+                           (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
                             tpt1.y = pt1.y + currTabHt
                             tpt2.y = pt2.y + currTabHt
-                            tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
-                            tl1 = [('M', [pt1.x,pt1.y])]
-                            tl1 += [('L', [tpt1.x, tpt1.y])]
-                            ele1 = inkex.Path(tl1)
-                            tl2 = [('M', [pt1.x,pt1.y])]
-                            tl2 += [('L', [tpt2.x, tpt2.y])]
-                            ele2 = inkex.Path(tl2)
-                            thetal1 = ele1.rotate(theta, [pt1.x,pt1.y])
-                            thetal2 = ele2.rotate(theta, [pt2.x,pt2.y])
-                            tpt1.x = thetal1[1].x
-                            tpt1.y = thetal1[1].y
-                            tpt2.x = thetal2[1].x
-                            tpt2.y = thetal2[1].y
-                    else:
-                        tpt1.y = pt1.y - currTabHt
-                        tpt2.y = pt2.y - currTabHt
+                        else:
+                            tpt1.y = pt1.y - currTabHt
+                            tpt2.y = pt2.y - currTabHt
                         tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
                         tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
                         tl1 = [('M', [pt1.x,pt1.y])]
@@ -350,28 +400,33 @@ class Extruder(inkex.EffectExtension):
                         tpt1.y = thetal1[1].y
                         tpt2.x = thetal2[1].x
                         tpt2.y = thetal2[1].y
-                        pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                        if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
-                            tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
-                            tl1 = [('M', [pt1.x,pt1.y])]
-                            tl1 += [('L', [tpt1.x, tpt1.y])]
-                            ele1 = inkex.Path(tl1)
-                            tl2 = [('M', [pt1.x,pt1.y])]
-                            tl2 += [('L', [tpt2.x, tpt2.y])]
-                            ele2 = inkex.Path(tl2)
-                            thetal1 = ele1.rotate(theta, [pt1.x,pt1.y])
-                            thetal2 = ele2.rotate(theta, [pt2.x,pt2.y])
-                            tpt1.x = thetal1[1].x
-                            tpt1.y = thetal1[1].y
-                            tpt2.x = thetal2[1].x
-                            tpt2.y = thetal2[1].y
                 else: # slope > 0.0
                     if pt1.x < pt2.x:
-                        tpt1.y = pt1.y - currTabHt
-                        tpt2.y = pt2.y - currTabHt
+                        tpt1.y = pt1.y - testHt
+                        tpt2.y = pt2.y - testHt
+                        tpt1.x = pt1.x + testHt/math.tan(math.radians(testAngle))
+                        tpt2.x = pt2.x - testHt/math.tan(math.radians(testAngle))
+                        tl1 = [('M', [pt1.x,pt1.y])]
+                        tl1 += [('L', [tpt1.x, tpt1.y])]
+                        ele1 = inkex.Path(tl1)
+                        tl2 = [('M', [pt1.x,pt1.y])]
+                        tl2 += [('L', [tpt2.x, tpt2.y])]
+                        ele2 = inkex.Path(tl2)
+                        thetal1 = ele1.rotate(theta, [pt1.x,pt1.y])
+                        thetal2 = ele2.rotate(theta, [pt2.x,pt2.y])
+                        tpt1.x = thetal1[1].x
+                        tpt1.y = thetal1[1].y
+                        tpt2.x = thetal2[1].x
+                        tpt2.y = thetal2[1].y
+                        pnpt1 = inkex.paths.Move(tpt1.x, tpt1.y)
+                        pnpt2 = inkex.paths.Move(tpt2.x, tpt2.y)
+                        if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
+                           (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
+                            tpt1.y = pt1.y + currTabHt
+                            tpt2.y = pt2.y + currTabHt
+                        else:
+                            tpt1.y = pt1.y - currTabHt
+                            tpt2.y = pt2.y - currTabHt
                         tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
                         tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
                         tl1 = [('M', [pt1.x,pt1.y])]
@@ -386,27 +441,32 @@ class Extruder(inkex.EffectExtension):
                         tpt1.y = thetal1[1].y
                         tpt2.x = thetal2[1].x
                         tpt2.y = thetal2[1].y
-                        pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                        if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
+                    else: # pt1.x > pt2.x
+                        tpt1.y = pt1.y - testHt
+                        tpt2.y = pt2.y - testHt
+                        tpt1.x = pt1.x - testHt/math.tan(math.radians(testAngle))
+                        tpt2.x = pt2.x + testHt/math.tan(math.radians(testAngle))
+                        tl1 = [('M', [pt1.x,pt1.y])]
+                        tl1 += [('L', [tpt1.x, tpt1.y])]
+                        ele1 = inkex.Path(tl1)
+                        tl2 = [('M', [pt1.x,pt1.y])]
+                        tl2 += [('L', [tpt2.x, tpt2.y])]
+                        ele2 = inkex.Path(tl2)
+                        thetal1 = ele1.rotate(theta, [pt1.x,pt1.y])
+                        thetal2 = ele2.rotate(theta, [pt2.x,pt2.y])
+                        tpt1.x = thetal1[1].x
+                        tpt1.y = thetal1[1].y
+                        tpt2.x = thetal2[1].x
+                        tpt2.y = thetal2[1].y
+                        pnpt1 = inkex.paths.Move(tpt1.x, tpt1.y)
+                        pnpt2 = inkex.paths.Move(tpt2.x, tpt2.y)
+                        if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
+                           (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
                             tpt1.y = pt1.y + currTabHt
                             tpt2.y = pt2.y + currTabHt
-                            tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
-                            tl1 = [('M', [pt1.x,pt1.y])]
-                            tl1 += [('L', [tpt1.x, tpt1.y])]
-                            ele1 = inkex.Path(tl1)
-                            tl2 = [('M', [pt1.x,pt1.y])]
-                            tl2 += [('L', [tpt2.x, tpt2.y])]
-                            ele2 = inkex.Path(tl2)
-                            thetal1 = ele1.rotate(theta, [pt1.x,pt1.y])
-                            thetal2 = ele2.rotate(theta, [pt2.x,pt2.y])
-                            tpt1.x = thetal1[1].x
-                            tpt1.y = thetal1[1].y
-                            tpt2.x = thetal2[1].x
-                            tpt2.y = thetal2[1].y
-                    else:
-                        tpt1.y = pt1.y - currTabHt
-                        tpt2.y = pt2.y - currTabHt
+                        else:
+                            tpt1.y = pt1.y - currTabHt
+                            tpt2.y = pt2.y - currTabHt
                         tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
                         tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
                         tl1 = [('M', [pt1.x,pt1.y])]
@@ -421,24 +481,6 @@ class Extruder(inkex.EffectExtension):
                         tpt1.y = thetal1[1].y
                         tpt2.x = thetal2[1].x
                         tpt2.y = thetal2[1].y
-                        pnpt = inkex.paths.Move(tpt1.x, tpt1.y)
-                        if self.insidePath(tpath.path, pnpt) ^ tpath.enclosed:
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
-                            tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                            tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
-                            tl1 = [('M', [pt1.x,pt1.y])]
-                            tl1 += [('L', [tpt1.x, tpt1.y])]
-                            ele1 = inkex.Path(tl1)
-                            tl2 = [('M', [pt1.x,pt1.y])]
-                            tl2 += [('L', [tpt2.x, tpt2.y])]
-                            ele2 = inkex.Path(tl2)
-                            thetal1 = ele1.rotate(theta, [pt1.x,pt1.y])
-                            thetal2 = ele2.rotate(theta, [pt2.x,pt2.y])
-                            tpt1.x = thetal1[1].x
-                            tpt1.y = thetal1[1].y
-                            tpt2.x = thetal2[1].x
-                            tpt2.y = thetal2[1].y
             # Check to see if any tabs intersect each other
             if self.detectIntersect(pt1.x, pt1.y, tpt1.x, tpt1.y, pt2.x, pt2.y, tpt2.x, tpt2.y):
                 # Found an intersection.
