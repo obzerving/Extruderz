@@ -75,7 +75,7 @@ class Extruder(inkex.EffectExtension):
             help="Angle of tab edges in degrees")
         pars.add_argument("--tabheight", type=float, default=0.4,\
             help="Height of tab in dimensional units")
-        pars.add_argument("--dashlength", type=float, default=0.25,\
+        pars.add_argument("--dashlength", type=float, default=0.1,\
             help="Length of dashline in dimensional units (zero for solid line)")
         #pars.add_argument("--tabsets", default="both",\ <-- For a future feature
             #help="Tab placement on cutouts")
