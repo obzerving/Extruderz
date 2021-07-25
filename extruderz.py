@@ -232,6 +232,24 @@ class Extruder(inkex.EffectExtension):
         else:
             return False
 
+    def orientTab(self,pt1,pt2,height,angle,theta,orient):
+        tpt1 = Line(0.0,0.0)
+        tpt2 = Line(0.0,0.0)
+        tpt1.x = pt1.x + orient[0]*height + orient[1]*height/math.tan(math.radians(angle))
+        tpt2.x = pt2.x + orient[2]*height + orient[3]*height/math.tan(math.radians(angle))
+        tpt1.y = pt1.y + orient[4]*height + orient[5]*height/math.tan(math.radians(angle))
+        tpt2.y = pt2.y + orient[6]*height + orient[7]*height/math.tan(math.radians(angle))
+        if not math.isclose(theta, 0.0):
+            t11 = Path([Move(pt1.x,pt1.y),Line(tpt1.x, tpt1.y)])
+            t12 = Path([Move(pt1.x,pt1.y),Line(tpt2.x, tpt2.y)])
+            thetal1 = t11.rotate(theta, [pt1.x,pt1.y])
+            thetal2 = t12.rotate(theta, [pt2.x,pt2.y])
+            tpt1.x = thetal1[1].x
+            tpt1.y = thetal1[1].y
+            tpt2.x = thetal2[1].x
+            tpt2.y = thetal2[1].y
+        return tpt1,tpt2
+
     def makeTab(self, tpath, pt1, pt2, tabht, taba):
         # tpath - the pathstructure containing pt1 and pt2
         # pt1, pt2 - the two points where the tab will be inserted
@@ -251,71 +269,35 @@ class Extruder(inkex.EffectExtension):
             if math.isclose(pt1.x, pt2.x):
                 # It's vertical. Let's try the right side
                 if pt1.y < pt2.y:
-                    tpt1.x = pt1.x + testHt
-                    tpt2.x = pt2.x + testHt
-                    tpt1.y = pt1.y + testHt/math.tan(math.radians(testAngle))
-                    tpt2.y = pt2.y - testHt/math.tan(math.radians(testAngle))
-                    pnpt1 = Move(tpt1.x, tpt1.y)
-                    pnpt2 = Move(tpt2.x, tpt2.y)
+                    pnpt1,pnpt2 = self.orientTab(pt1,pt2,testHt,testAngle,0.0,[1,0,1,0,0,1,0,-1])
                     if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
                        (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
-                        tpt1.x = pt1.x - currTabHt
-                        tpt2.x = pt2.x - currTabHt
+                        tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,0.0,[-1,0,-1,0,0,1,0,-1]) # Guessed wrong
                     else:
-                        tpt1.x = pt1.x + currTabHt
-                        tpt2.x = pt2.x + currTabHt
-                    tpt1.y = pt1.y + currTabHt/math.tan(math.radians(currTabAngle))
-                    tpt2.y = pt2.y - currTabHt/math.tan(math.radians(currTabAngle))
+                        tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,0.0,[1,0,1,0,0,1,0,-1]) # Guessed right
                 else: # pt2.y < pt1.y
-                    tpt1.x = pt1.x + testHt
-                    tpt2.x = pt2.x + testHt
-                    tpt1.y = pt1.y - testHt/math.tan(math.radians(testAngle))
-                    tpt2.y = pt2.y + testHt/math.tan(math.radians(testAngle))
-                    pnpt1 = Move(tpt1.x, tpt1.y)
-                    pnpt2 = Move(tpt2.x, tpt2.y)
+                    pnpt1,pnpt2 = self.orientTab(pt1,pt2,testHt,testAngle,0.0,[1,0,1,0,0,-1,0,1])
                     if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
                        (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
-                        tpt1.x = pt1.x - currTabHt
-                        tpt2.x = pt2.x - currTabHt
+                        tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,0.0,[-1,0,-1,0,0,-1,0,1]) # Guessed wrong
                     else:
-                        tpt1.x = pt1.x + currTabHt
-                        tpt2.x = pt2.x + currTabHt
-                    tpt1.y = pt1.y - currTabHt/math.tan(math.radians(currTabAngle))
-                    tpt2.y = pt2.y + currTabHt/math.tan(math.radians(currTabAngle))
+                        tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,0.0,[1,0,1,0,0,-1,0,1]) # Guessed right
             elif math.isclose(pt1.y, pt2.y):
                 # It's horizontal. Let's try the top
                 if pt1.x < pt2.x:
-                    tpt1.y = pt1.y - testHt
-                    tpt2.y = pt2.y - testHt
-                    tpt1.x = pt1.x + testHt/math.tan(math.radians(testAngle))
-                    tpt2.x = pt2.x - testHt/math.tan(math.radians(testAngle))
-                    pnpt1 = Move(tpt1.x, tpt1.y)
-                    pnpt2 = Move(tpt2.x, tpt2.y)
+                    pnpt1,pnpt2 = self.orientTab(pt1,pt2,testHt,testAngle,0.0,[0,1,0,-1,-1,0,-1,0])
                     if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
                        (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
-                        tpt1.y = pt1.y + currTabHt
-                        tpt2.y = pt2.y + currTabHt
+                        tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,0.0,[0,1,0,-1,1,0,1,0]) # Guessed wrong
                     else:
-                        tpt1.y = pt1.y - currTabHt
-                        tpt2.y = pt2.y - currTabHt
-                    tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                    tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
+                        tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,0.0,[0,1,0,-1,-1,0,-1,0]) # Guessed right
                 else: # pt2.x < pt1.x
-                    tpt1.y = pt1.y - testHt
-                    tpt2.y = pt2.y - testHt
-                    tpt1.x = pt1.x - testHt/math.tan(math.radians(testAngle))
-                    tpt2.x = pt2.x + testHt/math.tan(math.radians(testAngle))
-                    pnpt1 = Move(tpt1.x, tpt1.y)
-                    pnpt2 = Move(tpt2.x, tpt2.y)
+                    pnpt1,pnpt2 = self.orientTab(pt1,pt2,testHt,testAngle,0.0,[0,-1,0,1,-1,0,-1,0])
                     if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
                        (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
-                        tpt1.y = pt1.y + currTabHt
-                        tpt2.y = pt2.y + currTabHt
+                        tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,0.0,[0,-1,0,1,1,0,1,0]) # Guessed wrong
                     else:
-                        tpt1.y = pt1.y - currTabHt
-                        tpt2.y = pt2.y - currTabHt
-                    tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                    tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
+                        tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,0.0,[0,-1,0,1,-1,0,-1,0]) # Guessed right
 
             else: # the orientation is neither horizontal nor vertical
                 # Let's get the slope of the line between the points
@@ -328,134 +310,34 @@ class Extruder(inkex.EffectExtension):
                 seglength = math.sqrt((pt1.x-pt2.x)**2 +(pt1.y-pt2.y)**2)
                 if slope < 0.0:
                     if pt1.x < pt2.x:
-                        tpt1.y = pt1.y - testHt
-                        tpt2.y = pt2.y - testHt
-                        tpt1.x = pt1.x + testHt/math.tan(math.radians(testAngle))
-                        tpt2.x = pt2.x - testHt/math.tan(math.radians(testAngle))
-                        t11 = Path([Move(pt1.x,pt1.y),Line(tpt1.x, tpt1.y)])
-                        t12 = Path([Move(pt1.x,pt1.y),Line(tpt2.x, tpt2.y)])
-                        thetal1 = t11.rotate(theta, [pt1.x,pt1.y])
-                        thetal2 = t12.rotate(theta, [pt2.x,pt2.y])
-                        tpt1.x = thetal1[1].x
-                        tpt1.y = thetal1[1].y
-                        tpt2.x = thetal2[1].x
-                        tpt2.y = thetal2[1].y
-                        pnpt1 = Move(tpt1.x, tpt1.y)
-                        pnpt2 = Move(tpt2.x, tpt2.y)
+                        pnpt1,pnpt2 = self.orientTab(pt1,pt2,testHt,testAngle,theta,[0,1,0,-1,-1,0,-1,0])
                         if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
                            (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
+                            tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,theta,[0,1,0,-1,1,0,1,0]) # Guessed wrong
                         else:
-                            tpt1.y = pt1.y - currTabHt
-                            tpt2.y = pt2.y - currTabHt
-                        tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                        tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
-                        t11 = Path([Move(pt1.x,pt1.y),Line(tpt1.x, tpt1.y)])
-                        t12 = Path([Move(pt1.x,pt1.y),Line(tpt2.x, tpt2.y)])
-                        thetal1 = t11.rotate(theta, [pt1.x,pt1.y])
-                        thetal2 = t12.rotate(theta, [pt2.x,pt2.y])
-                        tpt1.x = thetal1[1].x
-                        tpt1.y = thetal1[1].y
-                        tpt2.x = thetal2[1].x
-                        tpt2.y = thetal2[1].y
+                            tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,theta,[0,1,0,-1,-1,0,-1,0]) # Guessed right
                     else: # pt1.x > pt2.x
-                        tpt1.y = pt1.y - testHt
-                        tpt2.y = pt2.y - testHt
-                        tpt1.x = pt1.x - testHt/math.tan(math.radians(testAngle))
-                        tpt2.x = pt2.x + testHt/math.tan(math.radians(testAngle))
-                        t11 = Path([Move(pt1.x,pt1.y),Line(tpt1.x, tpt1.y)])
-                        t12 = Path([Move(pt1.x,pt1.y),Line(tpt2.x, tpt2.y)])
-                        thetal1 = t11.rotate(theta, [pt1.x,pt1.y])
-                        thetal2 = t12.rotate(theta, [pt2.x,pt2.y])
-                        tpt1.x = thetal1[1].x
-                        tpt1.y = thetal1[1].y
-                        tpt2.x = thetal2[1].x
-                        tpt2.y = thetal2[1].y
-                        pnpt1 = Move(tpt1.x, tpt1.y)
-                        pnpt2 = Move(tpt2.x, tpt2.y)
+                        pnpt1,pnpt2 = self.orientTab(pt1,pt2,testHt,testAngle,theta,[0,-1,0,1,-1,0,-1,0])
                         if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
                            (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
+                            tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,theta,[0,-1,0,1,1,0,1,0]) # Guessed wrong
                         else:
-                            tpt1.y = pt1.y - currTabHt
-                            tpt2.y = pt2.y - currTabHt
-                        tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                        tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
-                        t11 = Path([Move(pt1.x,pt1.y),Line(tpt1.x, tpt1.y)])
-                        t12 = Path([Move(pt1.x,pt1.y),Line(tpt2.x, tpt2.y)])
-                        thetal1 = t11.rotate(theta, [pt1.x,pt1.y])
-                        thetal2 = t12.rotate(theta, [pt2.x,pt2.y])
-                        tpt1.x = thetal1[1].x
-                        tpt1.y = thetal1[1].y
-                        tpt2.x = thetal2[1].x
-                        tpt2.y = thetal2[1].y
+                            tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,theta,[0,-1,0,1,-1,0,-1,0]) # Guessed right
                 else: # slope > 0.0
                     if pt1.x < pt2.x:
-                        tpt1.y = pt1.y - testHt
-                        tpt2.y = pt2.y - testHt
-                        tpt1.x = pt1.x + testHt/math.tan(math.radians(testAngle))
-                        tpt2.x = pt2.x - testHt/math.tan(math.radians(testAngle))
-                        t11 = Path([Move(pt1.x,pt1.y),Line(tpt1.x, tpt1.y)])
-                        t12 = Path([Move(pt1.x,pt1.y),Line(tpt2.x, tpt2.y)])
-                        thetal1 = t11.rotate(theta, [pt1.x,pt1.y])
-                        thetal2 = t12.rotate(theta, [pt2.x,pt2.y])
-                        tpt1.x = thetal1[1].x
-                        tpt1.y = thetal1[1].y
-                        tpt2.x = thetal2[1].x
-                        tpt2.y = thetal2[1].y
-                        pnpt1 = Move(tpt1.x, tpt1.y)
-                        pnpt2 = Move(tpt2.x, tpt2.y)
+                        pnpt1,pnpt2 = self.orientTab(pt1,pt2,testHt,testAngle,theta,[0,1,0,-1,-1,0,-1,0])
                         if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
                            (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
+                            tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,theta,[0,1,0,-1,1,0,1,0]) # Guessed wrong
                         else:
-                            tpt1.y = pt1.y - currTabHt
-                            tpt2.y = pt2.y - currTabHt
-                        tpt1.x = pt1.x + currTabHt/math.tan(math.radians(currTabAngle))
-                        tpt2.x = pt2.x - currTabHt/math.tan(math.radians(currTabAngle))
-                        t11 = Path([Move(pt1.x,pt1.y),Line(tpt1.x, tpt1.y)])
-                        t12 = Path([Move(pt1.x,pt1.y),Line(tpt2.x, tpt2.y)])
-                        thetal1 = t11.rotate(theta, [pt1.x,pt1.y])
-                        thetal2 = t12.rotate(theta, [pt2.x,pt2.y])
-                        tpt1.x = thetal1[1].x
-                        tpt1.y = thetal1[1].y
-                        tpt2.x = thetal2[1].x
-                        tpt2.y = thetal2[1].y
+                            tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,theta,[0,1,0,-1,-1,0,-1,0]) # Guessed right
                     else: # pt1.x > pt2.x
-                        tpt1.y = pt1.y - testHt
-                        tpt2.y = pt2.y - testHt
-                        tpt1.x = pt1.x - testHt/math.tan(math.radians(testAngle))
-                        tpt2.x = pt2.x + testHt/math.tan(math.radians(testAngle))
-                        t11 = Path([Move(pt1.x,pt1.y),Line(tpt1.x, tpt1.y)])
-                        t12 = Path([Move(pt1.x,pt1.y),Line(tpt2.x, tpt2.y)])
-                        thetal1 = t11.rotate(theta, [pt1.x,pt1.y])
-                        thetal2 = t12.rotate(theta, [pt2.x,pt2.y])
-                        tpt1.x = thetal1[1].x
-                        tpt1.y = thetal1[1].y
-                        tpt2.x = thetal2[1].x
-                        tpt2.y = thetal2[1].y
-                        pnpt1 = Move(tpt1.x, tpt1.y)
-                        pnpt2 = Move(tpt2.x, tpt2.y)
+                        pnpt1,pnpt2 = self.orientTab(pt1,pt2,testHt,testAngle,theta,[0,-1,0,+1,-1,0,-1,0])
                         if ((not tpath.enclosed) and (self.insidePath(tpath.path, pnpt1) or self.insidePath(tpath.path, pnpt2))) or \
                            (tpath.enclosed and ((not self.insidePath(tpath.path, pnpt1)) and (not self.insidePath(tpath.path, pnpt2)))):
-                            tpt1.y = pt1.y + currTabHt
-                            tpt2.y = pt2.y + currTabHt
+                            tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,theta,[0,-1,0,1,1,0,1,0]) # Guessed wrong
                         else:
-                            tpt1.y = pt1.y - currTabHt
-                            tpt2.y = pt2.y - currTabHt
-                        tpt1.x = pt1.x - currTabHt/math.tan(math.radians(currTabAngle))
-                        tpt2.x = pt2.x + currTabHt/math.tan(math.radians(currTabAngle))
-                        t11 = Path([Move(pt1.x,pt1.y),Line(tpt1.x, tpt1.y)])
-                        t12 = Path([Move(pt1.x,pt1.y),Line(tpt2.x, tpt2.y)])
-                        thetal1 = t11.rotate(theta, [pt1.x,pt1.y])
-                        thetal2 = t12.rotate(theta, [pt2.x,pt2.y])
-                        tpt1.x = thetal1[1].x
-                        tpt1.y = thetal1[1].y
-                        tpt2.x = thetal2[1].x
-                        tpt2.y = thetal2[1].y
+                            tpt1,tpt2 = self.orientTab(pt1,pt2,currTabHt,currTabAngle,theta,[0,-1,0,1,-1,0,-1,0]) # Guessed right
             # Check to see if any tabs intersect each other
             if self.detectIntersect(pt1.x, pt1.y, tpt1.x, tpt1.y, pt2.x, pt2.y, tpt2.x, tpt2.y):
                 # Found an intersection.
