@@ -84,6 +84,8 @@ class Extruder(inkex.EffectExtension):
             help="Length of dashline in dimensional units (zero for solid line)")
         pars.add_argument("--extrudeit", default="both",\
             help="What to extrude")
+        pars.add_argument("--linesonwrapper", type=inkex.Boolean, dest="linesonwrapper",\
+            help="Put dashlines on wrappers")
         pars.add_argument("--unit", default="in",\
             help="Dimensional units")
 
@@ -370,6 +372,7 @@ class Extruder(inkex.EffectExtension):
         tab_angle = float(self.options.tabangle)
         tab_height = float(self.options.tabheight) * scale
         dashlength = float(self.options.dashlength) * scale
+        lines_on_wrapper = self.options.linesonwrapper
         extrude_it = self.options.extrudeit
         sstr = None
         npaths = []
@@ -408,7 +411,7 @@ class Extruder(inkex.EffectExtension):
             last_letter = 'Z'
             savid = elem.get_id()
             idmod = 0
-            for ptoken in elem.path: # For each point in the path
+            for ptoken in elem.path.to_absolute(): # For each point in the path
                 if ptoken.letter == 'M': # Starting point
                     # Hold this point in case we receive a Z
                     ptx1 = mx = ptoken.x
@@ -513,13 +516,16 @@ class Extruder(inkex.EffectExtension):
                     # Generate the wrappers from the extruded paths
                     for stripcnt in range(len(strips)):
                         if math.isclose(dashlength, 0.0) and (len(scores[stripcnt]) > 0):
-                            group = Group()
-                            group.label = 'g'+opath.id+'ws'+str(stripcnt)
-                            self.drawline(str(strips[stripcnt].path),'wrapper'+str(stripcnt),group,sstr) # Output the model
-                            self.drawline(str(scores[stripcnt]),'score'+str(stripcnt)+'w',group,sstr) # Output the scorelines separately
-                            layer.append(group)
+                            if lines_on_wrapper:
+                                group = Group()
+                                group.label = 'g'+opath.id+'ws'+str(stripcnt)
+                                self.drawline(str(strips[stripcnt].path),'wrapper'+str(stripcnt),group,sstr) # Output the model
+                                self.drawline(str(scores[stripcnt]),'score'+str(stripcnt)+'w',group,sstr) # Output the scorelines separately
+                                layer.append(group)
+                            else:
+                                self.drawline(str(strips[stripcnt].path),'wrapper'+str(stripcnt),layer,sstr) # Output the model
                         else:
-                            if len(scores[stripcnt]) > 0:
+                            if (len(scores[stripcnt]) > 0) and lines_on_wrapper:
                                 self.drawline(str(strips[stripcnt].path+scores[stripcnt]),opath.id+'ws'+str(stripcnt),layer,sstr)
                             else:
                                 self.drawline(str(strips[stripcnt].path),opath.id+'w'+str(stripcnt),layer,sstr)
