@@ -366,7 +366,7 @@ class Extruder(inkex.EffectExtension):
     def effect(self):
         layer = self.svg.get_current_layer()
         doc_layer = self.svg.add(Layer.new('Layer Doc'))
-        scale = self.svg.unittouu('1'+self.options.unit)
+        scale = self.svg.unittouu("1"+self.options.unit)
         extrude = float(self.options.extrude) * scale
         maxstrip = float(self.options.maxstrip) * scale
         tab_angle = float(self.options.tabangle)
@@ -398,12 +398,14 @@ class Extruder(inkex.EffectExtension):
                     for stoken in range(len(lsstr)):
                         if lsstr[stoken].startswith('stroke-width'):
                             swt = lsstr[stoken].split(':')[1]
-                            swf = str(float(swt)*escale)
-                            lsstr[stoken] = lsstr[stoken].replace(swt, swf)
+                            if not swt[2:].isalpha(): # is value expressed in units (e.g. px)?
+                                swf = str(float(swt)*escale) # no. scale it
+                                lsstr[stoken] = lsstr[stoken].replace(swt, swf)
                         if lsstr[stoken].startswith('stroke-miterlimit'):
                             swt = lsstr[stoken].split(':')[1]
-                            swf = str(float(swt)*escale)
-                            lsstr[stoken] = lsstr[stoken].replace(swt, swf)
+                            if not swt[2:].isalpha(): # is value expressed in units (e.g. px)?
+                                swf = str(float(swt)*escale) # no. scale it
+                                lsstr[stoken] = lsstr[stoken].replace(swt, swf)
                     sstr = ";".join(lsstr)
                 else:
                     sstr = None
@@ -451,7 +453,7 @@ class Extruder(inkex.EffectExtension):
                     else:
                         raise inkex.AbortExtension("Unrecognized path command {0}".format(ptoken.letter))
                     npath.path.append(Line(ptx2,pty2))
-                    if ptoken.letter == 'Z':
+                    if ptoken.letter == 'Z' or ((ptx2 == mx) and (pty2 == my)):
                         npaths.append(npath)
                 last_letter = ptoken.letter
             # check for cutouts
