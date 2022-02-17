@@ -528,7 +528,7 @@ class Extruder(inkex.EffectExtension):
                                 self.drawline(str(strips[stripcnt].path),'wrapper'+str(stripcnt),layer,sstr) # Output the model
                         else:
                             if (len(scores[stripcnt]) > 0) and lines_on_wrapper:
-                                self.drawline(str(strips[stripcnt].path+scores[stripcnt]),opath.id+'ws'+str(stripcnt),layer,sstr)
+                                self.drawline(str(scores[stripcnt]+strips[stripcnt].path),opath.id+'ws'+str(stripcnt),layer,sstr)
                             else:
                                 self.drawline(str(strips[stripcnt].path),opath.id+'w'+str(stripcnt),layer,sstr)
                     # Generate the tabbed strips from the extruded paths
@@ -554,7 +554,7 @@ class Extruder(inkex.EffectExtension):
                             layer.append(group)
                         else:
                             if len(scores[stripcnt]) > 0:
-                                self.drawline(str(mpath+scores[stripcnt]),opath.id+'ms'+str(stripcnt),layer,sstr)
+                                self.drawline(str(scores[stripcnt]+mpath),opath.id+'ms'+str(stripcnt),layer,sstr)
                             else:
                                 self.drawline(str(mpath),opath.id+'m'+str(stripcnt),layer,sstr)
 
