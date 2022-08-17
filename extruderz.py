@@ -17,12 +17,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-"""
-Given a closed path of straight lines, this program generates a paper model of
-(1) another copy of the closed path; (2) an extrusion (or more if it exceeds the
-maximum length) represented by a strip with tabs and score lines; and (3) strips
-for covering the tabbed strips.
-"""
+#
+# Given a closed path of straight lines, this program generates a paper model of
+# (1) another copy of the closed path; (2) an extrusion (or more if it exceeds the
+# maximum length) represented by a strip with tabs and score lines; and (3) strips
+# for covering the tabbed strips.
+# 08/17/22  SMZ added code to allow for changing the solid scoreline color (dashcolor)
 
 import inkex
 import math
@@ -82,6 +82,8 @@ class Extruder(inkex.EffectExtension):
             help="Height of tab in dimensional units")
         pars.add_argument("--dashlength", type=float, default=0.1,\
             help="Length of dashline in dimensional units (zero for solid line)")
+        pars.add_argument("--dashcolor", type=str, dest="dashcolor", default="#00CC00",\
+            help="Color of scorelines when solid")
         pars.add_argument("--extrudeit", default="both",\
             help="What to extrude")
         pars.add_argument("--linesonwrapper", type=inkex.Boolean, dest="linesonwrapper",\
@@ -366,7 +368,7 @@ class Extruder(inkex.EffectExtension):
     def effect(self):
         layer = self.svg.get_current_layer()
         doc_layer = self.svg.add(Layer.new('Layer Doc'))
-        scale = self.svg.unittouu("1"+self.options.unit)
+        scale = self.svg.unittouu('1'+self.options.unit)
         extrude = float(self.options.extrude) * scale
         maxstrip = float(self.options.maxstrip) * scale
         tab_angle = float(self.options.tabangle)
@@ -374,6 +376,7 @@ class Extruder(inkex.EffectExtension):
         dashlength = float(self.options.dashlength) * scale
         lines_on_wrapper = self.options.linesonwrapper
         extrude_it = self.options.extrudeit
+        dashcolor = self.options.dashcolor
         sstr = None
         npaths = []
         elems = []
@@ -398,14 +401,12 @@ class Extruder(inkex.EffectExtension):
                     for stoken in range(len(lsstr)):
                         if lsstr[stoken].startswith('stroke-width'):
                             swt = lsstr[stoken].split(':')[1]
-                            if not swt[2:].isalpha(): # is value expressed in units (e.g. px)?
-                                swf = str(float(swt)*escale) # no. scale it
-                                lsstr[stoken] = lsstr[stoken].replace(swt, swf)
+                            swf = str(float(swt)*escale)
+                            lsstr[stoken] = lsstr[stoken].replace(swt, swf)
                         if lsstr[stoken].startswith('stroke-miterlimit'):
                             swt = lsstr[stoken].split(':')[1]
-                            if not swt[2:].isalpha(): # is value expressed in units (e.g. px)?
-                                swf = str(float(swt)*escale) # no. scale it
-                                lsstr[stoken] = lsstr[stoken].replace(swt, swf)
+                            swf = str(float(swt)*escale)
+                            lsstr[stoken] = lsstr[stoken].replace(swt, swf)
                     sstr = ";".join(lsstr)
                 else:
                     sstr = None
@@ -453,7 +454,7 @@ class Extruder(inkex.EffectExtension):
                     else:
                         raise inkex.AbortExtension("Unrecognized path command {0}".format(ptoken.letter))
                     npath.path.append(Line(ptx2,pty2))
-                    if ptoken.letter == 'Z' or ((ptx2 == mx) and (pty2 == my)):
+                    if ptoken.letter == 'Z':
                         npaths.append(npath)
                 last_letter = ptoken.letter
             # check for cutouts
@@ -522,13 +523,16 @@ class Extruder(inkex.EffectExtension):
                                 group = Group()
                                 group.label = 'g'+opath.id+'ws'+str(stripcnt)
                                 self.drawline(str(strips[stripcnt].path),'wrapper'+str(stripcnt),group,sstr) # Output the model
+                                linesstr = sstr #save the normal line type
+                                sstr = {'stroke':dashcolor,'stroke-width':'0.25','fill':'#eeeeee'}                                
                                 self.drawline(str(scores[stripcnt]),'score'+str(stripcnt)+'w',group,sstr) # Output the scorelines separately
+                                sstr = linesstr
                                 layer.append(group)
                             else:
                                 self.drawline(str(strips[stripcnt].path),'wrapper'+str(stripcnt),layer,sstr) # Output the model
                         else:
                             if (len(scores[stripcnt]) > 0) and lines_on_wrapper:
-                                self.drawline(str(scores[stripcnt]+strips[stripcnt].path),opath.id+'ws'+str(stripcnt),layer,sstr)
+                                self.drawline(str(strips[stripcnt].path+scores[stripcnt]),opath.id+'ws'+str(stripcnt),layer,sstr)
                             else:
                                 self.drawline(str(strips[stripcnt].path),opath.id+'w'+str(stripcnt),layer,sstr)
                     # Generate the tabbed strips from the extruded paths
@@ -549,12 +553,16 @@ class Extruder(inkex.EffectExtension):
                         if math.isclose(dashlength, 0.0) and (len(scores[stripcnt]) > 0):
                             group = Group()
                             group.label = 'g'+opath.id+'ms'+str(stripcnt)
+                            
                             self.drawline(mpath,'model'+str(stripcnt),group,sstr) # Output the model
-                            self.drawline(str(scores[stripcnt]),'score'+str(stripcnt)+'m',group,sstr) # Output the scorelines separately
+                            linesstr = sstr #save the normal line type
+                            sstr = {'stroke':dashcolor,'stroke-width':'0.25','fill':'#eeeeee'}                                
+                            self.drawline(str(scores[stripcnt]),'score'+str(stripcnt)+'w',group,sstr) # Output the scorelines separately
+                            sstr = linesstr
                             layer.append(group)
                         else:
                             if len(scores[stripcnt]) > 0:
-                                self.drawline(str(scores[stripcnt]+mpath),opath.id+'ms'+str(stripcnt),layer,sstr)
+                                self.drawline(str(mpath+scores[stripcnt]),opath.id+'ms'+str(stripcnt),layer,sstr)
                             else:
                                 self.drawline(str(mpath),opath.id+'m'+str(stripcnt),layer,sstr)
 
