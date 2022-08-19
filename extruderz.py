@@ -82,6 +82,8 @@ class Extruder(inkex.EffectExtension):
             help="Height of tab in dimensional units")
         pars.add_argument("--dashlength", type=float, default=0.1,\
             help="Length of dashline in dimensional units (zero for solid line)")
+        pars.add_argument("--dashcolor", type=str, dest="dashcolor", default="#00CC00",\
+            help="Color of scorelines when solid")
         pars.add_argument("--extrudeit", default="both",\
             help="What to extrude")
         pars.add_argument("--linesonwrapper", type=inkex.Boolean, dest="linesonwrapper",\
@@ -372,9 +374,12 @@ class Extruder(inkex.EffectExtension):
         tab_angle = float(self.options.tabangle)
         tab_height = float(self.options.tabheight) * scale
         dashlength = float(self.options.dashlength) * scale
+        dashcolor = self.options.dashcolor
         lines_on_wrapper = self.options.linesonwrapper
         extrude_it = self.options.extrudeit
         sstr = None
+        
+        scorestr = {'stroke':dashcolor,'stroke-width':'0.25','fill':'#eeeeee'}  #change SMZ
         npaths = []
         elems = []
         for selem in self.svg.selection.filter(PathElement):
@@ -517,12 +522,12 @@ class Extruder(inkex.EffectExtension):
                         sstr = opath.style
                     # Generate the wrappers from the extruded paths
                     for stripcnt in range(len(strips)):
-                        if math.isclose(dashlength, 0.0) and (len(scores[stripcnt]) > 0):
+                        if math.isclose(dashlength, 0.0) and (len(scores[stripcnt]) > 0):                              
                             if lines_on_wrapper:
                                 group = Group()
                                 group.label = 'g'+opath.id+'ws'+str(stripcnt)
                                 self.drawline(str(strips[stripcnt].path),'wrapper'+str(stripcnt),group,sstr) # Output the model
-                                self.drawline(str(scores[stripcnt]),'score'+str(stripcnt)+'w',group,sstr) # Output the scorelines separately
+                                self.drawline(str(scores[stripcnt]),'score'+str(stripcnt)+'w',group,scorestr) # Output the scorelines separately
                                 layer.append(group)
                             else:
                                 self.drawline(str(strips[stripcnt].path),'wrapper'+str(stripcnt),layer,sstr) # Output the model
@@ -550,7 +555,7 @@ class Extruder(inkex.EffectExtension):
                             group = Group()
                             group.label = 'g'+opath.id+'ms'+str(stripcnt)
                             self.drawline(mpath,'model'+str(stripcnt),group,sstr) # Output the model
-                            self.drawline(str(scores[stripcnt]),'score'+str(stripcnt)+'m',group,sstr) # Output the scorelines separately
+                            self.drawline(str(scores[stripcnt]),'score'+str(stripcnt)+'m',group,scorestr) # Output the scorelines separately
                             layer.append(group)
                         else:
                             if len(scores[stripcnt]) > 0:

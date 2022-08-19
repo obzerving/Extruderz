@@ -5,6 +5,8 @@ Given a closed path of straight lines, this program generates a paper model of (
 
 Update: This extension now extrudes not only solid closed paths, but cutouts as well. For example, if you convert a text element (such as the letter "A") to a path, it will generate two extrusions; one for the path representing the outline of the letter and one for the path representing the cutout. Don't forget that curved letters also need to be converted to straight lines.
 
+Update: You can now change the color of solid score lines.
+
 Installing:
  
 Copy extruderz.inx and extruderz.py into your Inkscape user extensions directory. Where is that? Open Inkscape and go to the System section of the Preferences menu (Edit --> Preferences --> System). You will find a User extensions item containing the path to your user extensions directory.
