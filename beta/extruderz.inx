@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+  <name>Extruder</name>
+  <id>org.inkscape.extruderz</id>
+    <param name="usermenu" type="notebook">
+      <page name="settings" gui-text="Settings">
+        <param name ="extrude" type="float" precision="3" min="0.2" max="9999.0" gui-text="Width of extrusion:">1.0</param>
+        <param name ="maxstrip" type="float" min="0.5" max="9999.0" gui-text="Maximum length of extrusion:">11.5</param>
+        <param name ="tabangle" type="float" min="0.0" max="90.0" gui-text="Angle of tab edges (degrees):">45.0</param>
+        <param name="tabheight" type="float" precision="3" min="0.01" max="9999.0" gui-text="Height of tab:">0.4</param>
+        <param name="dashlength" type="float" precision="3" min="0.0" max="9999.0" gui-text="Length of dashline(zero for solid line):">0.1</param>
+		<param name="dashcolor" type="string" gui-text="Scoreline color (only when solid):">#00CC00</param>
+        <param name="extrudeit" type="optiongroup" appearance="combo" gui-text="What to extrude:">
+            <option translatable="no" value="outline">outline</option>
+            <option translatable="no" value="cutouts">cutouts</option>
+            <option translatable="no" value="both">both</option>
+        </param>
+        <param name="linesonwrapper" type="bool" gui-text="Put dashlines on wrappers:">true</param>
+        <param name="unit" type="optiongroup" appearance="combo" gui-text="Dimensional units:">
+            <option translatable="no" value="in">in</option>
+            <option translatable="no" value="px">px</option>
+            <option translatable="no" value="pt">pt</option>
+            <option translatable="no" value="ft">ft</option>
+            <option translatable="no" value="yd">yd</option>
+            <option translatable="no" value="mm">mm</option>
+            <option translatable="no" value="cm">cm</option>
+            <option translatable="no" value="m">m</option>
+            <option translatable="no" value="km">km</option>
+        </param>
+      </page>
+      <page name="_help" gui-text="Help">
+        <label xml:space="preserve">Given a closed path of straight lines, this program generates a paper model of (1) another copy of the closed path; (2) an extrusion (or more if it exceeds the maximum length) represented by a strip with tabs and score lines; and (3) strips for covering the tabbed strips.</label>
+      </page>
+    </param>
+  <effect needs-live-preview="false">
+    <!--object-type>path</object-type-->
+    <effects-menu>
+      <submenu name="Papercraft"/>
+    </effects-menu>
+  </effect>
+  <script>
+    <command location="inx" interpreter="python">extruderz.py</command>
+  </script>
+</inkscape-extension>
